@@ -24,6 +24,6 @@ public class Main {
         }
 
         testerKit.run();
-        System.out.println(testerKit.getReportQueue());
+        System.out.println(testerKit.getReport());
     }
 }

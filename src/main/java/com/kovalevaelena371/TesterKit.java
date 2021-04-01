@@ -63,7 +63,7 @@ public class TesterKit {
         }
     }
 
-    public String getReportQueue() {
+    public String getReport() {
         int success = 0;
         int failed = 0;
         int assertion_error = 0;
