@@ -7,25 +7,26 @@ import com.kovalevaelena371.annotation.Test;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Queue;
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.ArrayDeque;
 
 
 public class TesterKit {
 
-    private final Queue<TestInst> testInstQueue = new LinkedList<>();
-    private final Queue<ReportEntry> reportQueue = new LinkedList<>();
+    private final Queue<TestInst> testInstQueue = new ArrayDeque<>();
+    private final Queue<ReportEntry> reportQueue = new ArrayDeque<>();
     private final int threadNumber;
 
     public TesterKit(int n) {
         this.threadNumber = n;
     }
 
-    public void addClass(Class<?> testedClass) {
+    public void addClass(Class<?> testClass) {
 
-        List<Method> beforeMethodList = new LinkedList<>();
-        List<Method> afterMethodList = new LinkedList<>();
+        List<Method> beforeMethodList = new ArrayList<>();
+        List<Method> afterMethodList = new ArrayList<>();
 
-        for (var method : testedClass.getDeclaredMethods()) {
+        for (var method : testClass.getDeclaredMethods()) {
             if (method.isAnnotationPresent(Before.class)) {
                 beforeMethodList.add(method);
             }
@@ -35,9 +36,9 @@ public class TesterKit {
             }
         }
 
-        for (var method : testedClass.getDeclaredMethods()) {
+        for (var method : testClass.getDeclaredMethods()) {
             if (method.isAnnotationPresent(Test.class)) {
-                testInstQueue.add(new TestInst(testedClass, beforeMethodList, afterMethodList, method));
+                testInstQueue.add(new TestInst(testClass, beforeMethodList, afterMethodList, method));
             }
         }
     }
@@ -77,9 +78,22 @@ public class TesterKit {
             sb.append(reportEntry.getTestName());
             sb.append(" ");
             sb.append(reportEntry.getStatus());
-            sb.append(" ");
-            sb.append(reportEntry.getCause()) ;
-            sb.append(" " + "\n");
+
+            String causeMessage = reportEntry.getCauseMessage();
+            if (causeMessage != null) {
+                sb.append(" ");
+                sb.append(reportEntry.getCauseMessage());
+            }
+
+            String stackTrace = reportEntry.getStackTrace();
+            if (stackTrace != null) {
+                sb.append("\n");
+                sb.append("Stack trace:");
+                sb.append("\n");
+                sb.append(reportEntry.getStackTrace());
+            }
+
+            sb.append("\n");
 
             switch (reportEntry.getStatus()) {
                 case SUCCESS -> success++;

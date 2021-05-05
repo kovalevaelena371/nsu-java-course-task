@@ -27,12 +27,18 @@ public class Tester implements Runnable {
                 testInst = testMethodQueue.poll();
             }
             
-            Object obj = null;
+            Object obj;
             ReportEntry result;
+
             try {
-                
-                obj = testInst.getTestedClass().getDeclaredConstructor().newInstance();
+                obj = testInst.getTestClass().getDeclaredConstructor().newInstance();
                 runBefore(testInst, obj);
+            } catch (Throwable e) {
+                System.out.println("One of @Before methods failed. Test \"" + testInst.getTest().getName() + "\" will be skipped.");
+                continue;
+            }
+
+            try {
                 testInst.getTest().invoke(obj);
                 result = ReportEntry.success(testInst);
 
@@ -41,7 +47,7 @@ public class Tester implements Runnable {
                 if (testInst.getTest().getAnnotation(Test.class).expected().isInstance(e.getCause())) {
                     result = ReportEntry.success(testInst);
                 } else if (e.getCause() instanceof AssertionError) {
-                    result =  ReportEntry.failed(testInst, e, ReportEntry.Status.ASSERTION_ERROR);
+                    result = ReportEntry.failed(testInst, e, ReportEntry.Status.ASSERTION_ERROR);
                 } else {
                     result = ReportEntry.failed(testInst, e, ReportEntry.Status.FAILED);
                 }
@@ -52,17 +58,18 @@ public class Tester implements Runnable {
             synchronized (reportQueue) {
                 reportQueue.add(result);
             }
+
+            String shortResult = "Test " + testInst.getTest().getName() +
+                    " from " +  testInst.getTestClass().getName() +
+                    " is completed. Short result: " + result.getStatus();
+            System.out.println(shortResult);
         }
     }
 
-    private void runBefore(TestInst testInst, Object obj) {
+    private void runBefore(TestInst testInst, Object obj) throws Throwable {
         if (obj == null) return;
         for (var beforeMethod : testInst.getBeforeMethods()) {
-            try {
-                beforeMethod.invoke(obj);
-            } catch (Throwable e) {
-                e.printStackTrace();
-            }
+            beforeMethod.invoke(obj);
         }
     }
 

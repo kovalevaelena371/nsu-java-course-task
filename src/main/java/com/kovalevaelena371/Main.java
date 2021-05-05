@@ -15,11 +15,10 @@ public class Main {
         TesterKit testerKit = new TesterKit(numberOfThreads);
         for (int i = 1; i < args.length; i++) {
             try {
-                // It must be full class name. Example: com.kovalevaelena371.Test1
                 Class<?> testClass = Class.forName(args[i]);
                 testerKit.addClass(testClass);
             } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+                System.err.println("No such class. It must be full class name, example: com.kovalevaelena371.Test1");
             }
         }
 

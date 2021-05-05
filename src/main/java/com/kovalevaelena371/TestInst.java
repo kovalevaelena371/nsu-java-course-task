@@ -6,7 +6,7 @@ import java.util.List;
 
 public class TestInst {
 
-    private final Class<?> TestedClass;
+    private final Class<?> testClass;
     private final List<Method> beforeMethods;
     private final List<Method> afterMethods;
     private final Method test;
@@ -15,7 +15,7 @@ public class TestInst {
                     List<Method> beforeMethods,
                     List<Method> afterMethods,
                     Method test) {
-        this.TestedClass = TestedClass;
+        this.testClass = TestedClass;
         this.beforeMethods = beforeMethods;
         this.afterMethods = afterMethods;
         this.test = test;
@@ -33,7 +33,7 @@ public class TestInst {
         return test;
     }
 
-    public Class<?> getTestedClass() {
-        return TestedClass;
+    public Class<?> getTestClass() {
+        return testClass;
     }
 }
