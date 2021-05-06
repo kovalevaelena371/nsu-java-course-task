@@ -6,8 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- This annotation is for methods which must be executed before calling the test.
- The order of execution of the marked methods is undefined.
+ * This annotation is for methods which must be executed before calling the test.
+ * The order of execution of the marked methods is undefined.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

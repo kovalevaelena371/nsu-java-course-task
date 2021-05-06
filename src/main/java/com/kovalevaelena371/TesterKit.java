@@ -1,55 +1,43 @@
 package com.kovalevaelena371;
 
-import com.kovalevaelena371.annotation.After;
-import com.kovalevaelena371.annotation.Before;
-import com.kovalevaelena371.annotation.Test;
-
-import java.lang.reflect.Method;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Queue;
-import java.util.ArrayList;
 import java.util.ArrayDeque;
 
 
 public class TesterKit {
 
-    private final Queue<TestInst> testInstQueue = new ArrayDeque<>();
-    private final Queue<ReportEntry> reportQueue = new ArrayDeque<>();
-    private final int threadNumber;
+    public static class BooleanHolder {
+        public Boolean value;
 
-    public TesterKit(int n) {
-        this.threadNumber = n;
+        BooleanHolder(Boolean value) {
+            this.value = value;
+        }
     }
 
-    public void addClass(Class<?> testClass) {
+    private final Queue<TestInst> testInstQueue = new ArrayDeque<>();
+    private final Queue<ReportEntry> reportQueue = new ArrayDeque<>();
+    private final BooleanHolder thereWillBeBoMore = new BooleanHolder(false);
 
-        List<Method> beforeMethodList = new ArrayList<>();
-        List<Method> afterMethodList = new ArrayList<>();
+    private final int threadNumber;
+    private final String[] testClassNames;
 
-        for (var method : testClass.getDeclaredMethods()) {
-            if (method.isAnnotationPresent(Before.class)) {
-                beforeMethodList.add(method);
-            }
-
-            if (method.isAnnotationPresent(After.class)) {
-                afterMethodList.add(method);
-            }
-        }
-
-        for (var method : testClass.getDeclaredMethods()) {
-            if (method.isAnnotationPresent(Test.class)) {
-                testInstQueue.add(new TestInst(testClass, beforeMethodList, afterMethodList, method));
-            }
-        }
+    public TesterKit(int n, String[] testClassNames) {
+        this.threadNumber = n;
+        this.testClassNames = testClassNames;
     }
 
     public void run() {
-
-        Thread[] threads = new Thread[threadNumber];
+        Thread[] threadsForFillers = new Thread[threadNumber];
+        Thread[] threadsForTesters = new Thread[threadNumber];
+        Queue<String> testClassNameQueue = new ArrayDeque<>(Arrays.asList(testClassNames));
         for (int i = 0; i < this.threadNumber; i++) {
             try {
-                threads[i] = new Thread(new Tester(testInstQueue, reportQueue));
-                threads[i].start();
+                threadsForFillers[i] = new Thread(new QueueFiller(testClassNameQueue, testInstQueue, thereWillBeBoMore));
+                threadsForTesters[i] = new Thread(new Tester(testInstQueue, reportQueue, thereWillBeBoMore));
+
+                threadsForFillers[i].start();
+                threadsForTesters[i].start();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -57,7 +45,7 @@ public class TesterKit {
 
         for (int i = 0; i < this.threadNumber; i++) {
             try {
-                threads[i].join();
+                threadsForTesters[i].join();
             } catch (Exception e) {
                 e.printStackTrace();
             }

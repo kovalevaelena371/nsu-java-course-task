@@ -1,5 +1,7 @@
 package com.kovalevaelena371;
 
+import com.kovalevaelena371.annotation.Test;
+
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -19,6 +21,19 @@ public class TestInst {
         this.beforeMethods = beforeMethods;
         this.afterMethods = afterMethods;
         this.test = test;
+    }
+
+    public boolean expectsException() {
+        return getExpectedException() != null;
+    }
+
+    public Class<? extends Throwable> getExpectedException() {
+        Test annotation = test.getAnnotation(Test.class);
+        if (annotation.expected() == Test.None.class) {
+            return null;
+        } else {
+            return annotation.expected();
+        }
     }
 
     public List<Method> getBeforeMethods() {

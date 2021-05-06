@@ -33,18 +33,12 @@ public class ReportEntry {
      }
 
     public static ReportEntry failed(TestInst test, Throwable cause, Status status) {
-        Throwable unboxedCause = cause.getCause();
-        if (unboxedCause != null) {
-            cause = unboxedCause;
-        }
-
         String stackTrace;
         try (StringWriter sw = new StringWriter(); PrintWriter pw = new PrintWriter(sw)) {
             cause.printStackTrace(pw);
             stackTrace = sw.toString();
         }
-        catch (IOException ioe)
-        {
+        catch (IOException ioe) {
             throw new IllegalStateException(ioe);
         }
 

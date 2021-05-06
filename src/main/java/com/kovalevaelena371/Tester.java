@@ -1,35 +1,44 @@
 package com.kovalevaelena371;
 
 import com.kovalevaelena371.exception.AssertionError;
-import com.kovalevaelena371.annotation.Test;
+import com.kovalevaelena371.TesterKit.BooleanHolder;
 
 import java.util.Queue;
-
 
 public class Tester implements Runnable {
 
     private final Queue<TestInst> testMethodQueue;
     private final Queue<ReportEntry> reportQueue;
+    private final BooleanHolder thereWillBeBoMore;
 
-    public Tester(Queue<TestInst> testMethodQueue, Queue<ReportEntry> reportQueue) {
+    public Tester(Queue<TestInst> testMethodQueue, Queue<ReportEntry> reportQueue, BooleanHolder thereWillBeBoMore) {
         this.testMethodQueue = testMethodQueue;
         this.reportQueue = reportQueue;
+        this.thereWillBeBoMore = thereWillBeBoMore;
     }
 
     public void run() {
-        
+        outer:
         while (true) {
             TestInst testInst;
             synchronized (testMethodQueue) {
-                if (testMethodQueue.isEmpty()) {
-                    break;
+                while (testMethodQueue.isEmpty()) {
+                    if (thereWillBeBoMore.value) {
+                        testMethodQueue.notify();
+                        break outer;
+                    }
+                    try {
+                        testMethodQueue.wait();
+                    }
+                    catch (InterruptedException ignored) {
+                        break outer;
+                    }
                 }
                 testInst = testMethodQueue.poll();
             }
             
             Object obj;
             ReportEntry result;
-
             try {
                 obj = testInst.getTestClass().getDeclaredConstructor().newInstance();
                 runBefore(testInst, obj);
@@ -40,16 +49,20 @@ public class Tester implements Runnable {
 
             try {
                 testInst.getTest().invoke(obj);
-                result = ReportEntry.success(testInst);
-
+                if (testInst.expectsException()) {
+                    result = ReportEntry.failed(testInst,
+                            new AssertionError("Expected exception: " + testInst.getExpectedException().getName()),
+                            ReportEntry.Status.FAILED);
+                } else {
+                    result = ReportEntry.success(testInst);
+                }
             } catch (Throwable e) {
-
-                if (testInst.getTest().getAnnotation(Test.class).expected().isInstance(e.getCause())) {
+                if (testInst.expectsException() && testInst.getExpectedException().isInstance(e.getCause())) {
                     result = ReportEntry.success(testInst);
                 } else if (e.getCause() instanceof AssertionError) {
-                    result = ReportEntry.failed(testInst, e, ReportEntry.Status.ASSERTION_ERROR);
+                    result = ReportEntry.failed(testInst, e.getCause(), ReportEntry.Status.ASSERTION_ERROR);
                 } else {
-                    result = ReportEntry.failed(testInst, e, ReportEntry.Status.FAILED);
+                    result = ReportEntry.failed(testInst, e.getCause(), ReportEntry.Status.FAILED);
                 }
             } finally {
                 runAfter(testInst, obj);

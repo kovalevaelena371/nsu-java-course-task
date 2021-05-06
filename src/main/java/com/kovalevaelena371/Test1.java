@@ -37,6 +37,9 @@ public class Test1 {
         assertTrue(testedClass.One() == testedClass.Two());
     }
 
+    @Test(expected = NullPointerException.class)
+    public void fourthTest() {}
+
     @After
     public void firstAfterMethod() {
         System.out.println("firstAfterMethod form Test1");
