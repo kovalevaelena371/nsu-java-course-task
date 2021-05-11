@@ -24,13 +24,11 @@ public class Tester implements Runnable {
             synchronized (testMethodQueue) {
                 while (testMethodQueue.isEmpty()) {
                     if (thereWillBeNoMore.value) {
-                        testMethodQueue.notifyAll();
                         break outer;
                     }
                     try {
                         testMethodQueue.wait();
-                    }
-                    catch (InterruptedException e) {
+                    } catch (InterruptedException e) {
                         break outer;
                     }
                 }
