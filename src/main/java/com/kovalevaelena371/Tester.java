@@ -9,12 +9,12 @@ public class Tester implements Runnable {
 
     private final Queue<TestInst> testMethodQueue;
     private final Queue<ReportEntry> reportQueue;
-    private final BooleanHolder thereWillBeBoMore;
+    private final BooleanHolder thereWillBeNoMore;
 
-    public Tester(Queue<TestInst> testMethodQueue, Queue<ReportEntry> reportQueue, BooleanHolder thereWillBeBoMore) {
+    public Tester(Queue<TestInst> testMethodQueue, Queue<ReportEntry> reportQueue, BooleanHolder thereWillBeNoMore) {
         this.testMethodQueue = testMethodQueue;
         this.reportQueue = reportQueue;
-        this.thereWillBeBoMore = thereWillBeBoMore;
+        this.thereWillBeNoMore = thereWillBeNoMore;
     }
 
     public void run() {
@@ -23,14 +23,14 @@ public class Tester implements Runnable {
             TestInst testInst;
             synchronized (testMethodQueue) {
                 while (testMethodQueue.isEmpty()) {
-                    if (thereWillBeBoMore.value) {
-                        testMethodQueue.notify();
+                    if (thereWillBeNoMore.value) {
+                        testMethodQueue.notifyAll();
                         break outer;
                     }
                     try {
                         testMethodQueue.wait();
                     }
-                    catch (InterruptedException ignored) {
+                    catch (InterruptedException e) {
                         break outer;
                     }
                 }
@@ -62,7 +62,7 @@ public class Tester implements Runnable {
                 } else if (e.getCause() instanceof AssertionError) {
                     result = ReportEntry.failed(testInst, e.getCause(), ReportEntry.Status.ASSERTION_ERROR);
                 } else {
-                    result = ReportEntry.failed(testInst, e.getCause(), ReportEntry.Status.FAILED);
+                    result = ReportEntry.failed(testInst, e, ReportEntry.Status.FAILED);
                 }
             } finally {
                 runAfter(testInst, obj);

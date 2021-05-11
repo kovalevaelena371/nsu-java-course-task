@@ -1,14 +1,17 @@
 package com.kovalevaelena371;
 
-import java.util.Arrays;
-import java.util.Queue;
-import java.util.ArrayDeque;
+import com.kovalevaelena371.annotation.After;
+import com.kovalevaelena371.annotation.Before;
+import com.kovalevaelena371.annotation.Test;
+
+import java.lang.reflect.Method;
+import java.util.*;
 
 
 public class TesterKit {
 
     public static class BooleanHolder {
-        public Boolean value;
+        public volatile boolean value;
 
         BooleanHolder(Boolean value) {
             this.value = value;
@@ -17,7 +20,7 @@ public class TesterKit {
 
     private final Queue<TestInst> testInstQueue = new ArrayDeque<>();
     private final Queue<ReportEntry> reportQueue = new ArrayDeque<>();
-    private final BooleanHolder thereWillBeBoMore = new BooleanHolder(false);
+    private final BooleanHolder thereWillBeNoMore = new BooleanHolder(false);
 
     private final int threadNumber;
     private final String[] testClassNames;
@@ -28,26 +31,62 @@ public class TesterKit {
     }
 
     public void run() {
-        Thread[] threadsForFillers = new Thread[threadNumber];
-        Thread[] threadsForTesters = new Thread[threadNumber];
-        Queue<String> testClassNameQueue = new ArrayDeque<>(Arrays.asList(testClassNames));
+        Thread[] testers = new Thread[threadNumber];
         for (int i = 0; i < this.threadNumber; i++) {
             try {
-                threadsForFillers[i] = new Thread(new QueueFiller(testClassNameQueue, testInstQueue, thereWillBeBoMore));
-                threadsForTesters[i] = new Thread(new Tester(testInstQueue, reportQueue, thereWillBeBoMore));
-
-                threadsForFillers[i].start();
-                threadsForTesters[i].start();
+                testers[i] = new Thread(new Tester(testInstQueue, reportQueue, thereWillBeNoMore));
+                testers[i].start();
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
+        Class<?> testClass;
+        for (String testClassName : testClassNames) {
+            try {
+                testClass = Class.forName(testClassName);
+            } catch (ClassNotFoundException e) {
+                System.err.println("No such class. It must be full class name, example: com.kovalevaelena371.Test1");
+                continue;
+            }
+            addClass(testClass);
+        }
+
+        thereWillBeNoMore.value = true;
+        synchronized (testInstQueue) {
+            testInstQueue.notifyAll();
+        }
+
         for (int i = 0; i < this.threadNumber; i++) {
             try {
-                threadsForTesters[i].join();
+                testers[i].join();
             } catch (Exception e) {
                 e.printStackTrace();
+            }
+        }
+    }
+
+    public void addClass(Class<?> testClass) {
+
+        List<Method> beforeMethodList = new ArrayList<>();
+        List<Method> afterMethodList = new ArrayList<>();
+
+        for (var method : testClass.getDeclaredMethods()) {
+            if (method.isAnnotationPresent(Before.class)) {
+                beforeMethodList.add(method);
+            }
+
+            if (method.isAnnotationPresent(After.class)) {
+                afterMethodList.add(method);
+            }
+        }
+
+        for (var method : testClass.getDeclaredMethods()) {
+            if (method.isAnnotationPresent(Test.class)) {
+                synchronized (testInstQueue) {
+                    testInstQueue.add(new TestInst(testClass, beforeMethodList, afterMethodList, method));
+                    testInstQueue.notify();
+                }
             }
         }
     }

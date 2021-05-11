@@ -37,8 +37,7 @@ public class ReportEntry {
         try (StringWriter sw = new StringWriter(); PrintWriter pw = new PrintWriter(sw)) {
             cause.printStackTrace(pw);
             stackTrace = sw.toString();
-        }
-        catch (IOException ioe) {
+        } catch (IOException ioe) {
             throw new IllegalStateException(ioe);
         }
 
